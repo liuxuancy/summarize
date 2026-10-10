@@ -26,7 +26,7 @@ def get_client() -> OpenAI:
 
 @app.get("/")
 def index():
-    return FileResponse(BASE_DIR / "static" / "index.html")
+    return FileResponse(BASE_DIR / "public" / "index.html")
 
 
 @app.post("/api/summarise")
