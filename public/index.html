@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Doc Summarise</title>
+  <style>
+    :root {
+      --bg: #f1f4f8;
+      --panel: #ffffff;
+      --border: #d9dee6;
+      --header-bg: #f8fafc;
+      --text: #1e293b;
+      --muted: #94a3b8;
+      --label: #475569;
+      --brand: #0f9d63;
+      --primary: #38a8f0;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; background: #fff; border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 6px; background: var(--brand);
+      color: #fff; font-weight: 700; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .title { font-weight: 700; font-size: 18px; }
+    .version {
+      font-family: ui-monospace, Consolas, monospace; font-size: 13px;
+      background: #eef1f5; padding: 3px 10px; border-radius: 12px; color: var(--label);
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 16px; border-radius: 6px; font-size: 14px; font-weight: 600;
+      border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer;
+    }
+    .btn:hover { background: #f8fafc; }
+    .btn svg { width: 16px; height: 16px; }
+    .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #1e96e3; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-primary:disabled:hover { background: var(--primary); }
+
+    main {
+      flex: 1; min-height: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 16px 10px 18px;
+    }
+    .panel {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    }
+    .panel-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; background: var(--header-bg); border-bottom: 1px solid var(--border);
+      font-size: 13px; font-weight: 700; letter-spacing: .03em; color: var(--label);
+    }
+    .status {
+      font-family: ui-monospace, Consolas, monospace; font-weight: 500; letter-spacing: 0;
+      background: #eef1f5; padding: 2px 10px; border-radius: 12px;
+    }
+    .status.loading { background: #e0f2fe; color: #0369a1; }
+    .status.done { background: #dcfce7; color: #15803d; }
+    .status.error { background: #fee2e2; color: #b91c1c; }
+    .filename { font-weight: 500; letter-spacing: 0; color: var(--muted); }
+    .panel-body {
+      flex: 1; overflow: auto; padding: 18px 16px;
+      white-space: pre-wrap; word-break: break-word; line-height: 1.65; font-size: 15px;
+    }
+    .placeholder { color: var(--muted); font-style: italic; }
+    .panel-footer {
+      display: flex; gap: 12px; padding: 12px 16px;
+      border-top: 1px solid var(--border); background: var(--header-bg);
+    }
+    #summary.md { white-space: normal; }
+    #summary.md > :first-child { margin-top: 0; }
+    #summary.md p, #summary.md ul, #summary.md ol { margin: 0 0 .8em; }
+    #summary.md li { margin: .25em 0; }
+    @media (max-width: 760px) {
+      main { grid-template-columns: 1fr; }
+      .panel { min-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">DS</div>
+      <span class="title">Doc Summarise</span>
+      <span class="version">v0.0.0</span>
+    </div>
+    <button class="btn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Log in
+    </button>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-header">DOCUMENT <span class="filename" id="filename"></span></div>
+      <div class="panel-body" id="doc"><span class="placeholder">Upload a document, then click Summarise.</span></div>
+      <div class="panel-footer">
+        <input type="file" id="fileInput" accept=".txt,text/plain" hidden />
+        <button class="btn" id="uploadBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/></svg>
+          Upload document
+        </button>
+        <button class="btn btn-primary" id="summariseBtn" type="button" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+          Summarise
+        </button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">AI SUMMARY <span class="status" id="status">idle</span></div>
+      <div class="panel-body" id="summary"><span class="placeholder">Summary will appear here...</span></div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const summariseBtn = document.getElementById("summariseBtn");
+    const docEl = document.getElementById("doc");
+    const summaryEl = document.getElementById("summary");
+    const statusEl = document.getElementById("status");
+    const filenameEl = document.getElementById("filename");
+    let docText = "";
+
+    function setStatus(text, cls) {
+      statusEl.textContent = text;
+      statusEl.className = "status" + (cls ? " " + cls : "");
+    }
+
+    uploadBtn.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      if (!file.name.toLowerCase().endsWith(".txt")) {
+        alert("请选择 .txt 文件");
+        fileInput.value = "";
+        return;
+      }
+      docText = await file.text();
+      docEl.textContent = docText || "(空文件)";
+      filenameEl.textContent = file.name;
+      summariseBtn.disabled = !docText.trim();
+      summaryEl.innerHTML = '<span class="placeholder">Summary will appear here...</span>';
+      setStatus("idle");
+      fileInput.value = "";
+    });
+
+    summariseBtn.addEventListener("click", async () => {
+      summariseBtn.disabled = true;
+      uploadBtn.disabled = true;
+      setStatus("summarising...", "loading");
+      summaryEl.classList.remove("md");
+      summaryEl.innerHTML = '<span class="placeholder">Generating summary...</span>';
+      try {
+        const res = await fetch("/api/summarise", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: docText }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || res.statusText);
+        summaryEl.innerHTML = DOMPurify.sanitize(marked.parse(data.summary));
+        summaryEl.classList.add("md");
+        setStatus("done", "done");
+      } catch (err) {
+        summaryEl.textContent = "出错了：" + err.message;
+        setStatus("error", "error");
+      } finally {
+        summariseBtn.disabled = false;
+        uploadBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
