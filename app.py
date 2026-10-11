@@ -10,7 +10,7 @@ from pydantic import BaseModel
 BASE_DIR = Path(__file__).parent
 load_dotenv(BASE_DIR / ".env")
 
-app = FastAPI(title="Doc Summarise")
+app = FastAPI(title="Doc Translate")
 
 
 class SummariseRequest(BaseModel):
@@ -42,10 +42,11 @@ def summarise(req: SummariseRequest):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a helpful assistant that writes concise, well-structured summaries. "
-                    "Reply in the same language as the document.",
+                    "content": "You are a professional translator. Translate faithfully and naturally, "
+                    "preserving the original line breaks, paragraphs and formatting. "
+                    "Output only the translation, with no explanations or notes.",
                 },
-                {"role": "user", "content": f"please summary the input context,just send the summarised text back and do not have title：\n\n{text}"},
+                {"role": "user", "content": f"翻译输入的文本，如果是英语则翻译成中文，如果是其他语言则翻译为英文，只输出翻译后的文本，不需要标题：\n\n{text}"},
             ],
         )
     except Exception as e:
